@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -15,9 +16,16 @@ import com.hac.dittosample.ui.theme.DittoSampleTheme
 import live.ditto.Ditto
 import live.ditto.DittoError
 import live.ditto.DittoIdentity
+import live.ditto.DittoLiveQueryEvent
+import live.ditto.DittoLogLevel
+import live.ditto.DittoLogger
+import live.ditto.DittoSyncSubscription
 import live.ditto.android.DefaultAndroidDittoDependencies
+import live.ditto.transports.DittoSyncPermissions
 import live.ditto.transports.DittoTransportConfig
 import live.ditto.transports.java.DittoConnect
+
+lateinit var subscription: DittoSyncSubscription
 
 class MainActivity : ComponentActivity() {
     private val config = DittoTransportConfig()
@@ -25,26 +33,32 @@ class MainActivity : ComponentActivity() {
     private lateinit var ditto: Ditto
     var value: MutableState<SnapshotStateList<String>> = mutableStateOf(docValues)
 
-
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { this.ditto.refreshPermissions() }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val serverUrl = "wss://e728cd18-dcef-404b-be90-721cc24cfe22.cloud.ditto.live"
+
+        val serverUrl = "wss://d68742e1-380f-4d55-94cd-d2b344f3dc63.cloud.ditto.live"
         try {
-            config.enableAllPeerToPeer()
+            requestPermissions()
             config.connect = DittoConnect(websocketUrls = mutableSetOf(serverUrl))
-            config.peerToPeer.bluetoothLe.enabled = false
-            config.peerToPeer.lan.enabled = true
-            config.peerToPeer.wifiAware.enabled = true
             androidDependencies = DefaultAndroidDittoDependencies(this.applicationContext)
             val identity =
                 DittoIdentity.OnlineWithAuthentication(
                     dependencies = androidDependencies,
-                    appId = "e728cd18-dcef-404b-be90-721cc24cfe22",
+                    appId = "d68742e1-380f-4d55-94cd-d2b344f3dc63",
                     callback = AuthCallBack()
                 )
+            DittoLogger.minimumLogLevel = DittoLogLevel.DEBUG
             ditto = Ditto(androidDependencies, identity)
+            config.enableAllPeerToPeer()
+            config.peerToPeer.bluetoothLe.enabled = true
+            config.peerToPeer.lan.enabled = true
+            config.peerToPeer.wifiAware.enabled = true
+            ditto.transportConfig = config
+            ditto.disableSyncWithV3()
             ditto.startSync()
             observeItems(ditto)
+            ditto.store.observers
 
         } catch (e: DittoError) {
             Log.e("Ditto error", e.message!!)
@@ -52,7 +66,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DittoSampleTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -63,6 +76,40 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun requestPermissions() {
+        val missing = DittoSyncPermissions(this).missingPermissions()
+        if (missing.isNotEmpty()) {
+            this.requestPermissions(missing, 0)
+        }
+    }
+
 }
 
+private fun observeItems(ditto: Ditto) {
+    val query = ditto.store.collection(collection).findAll()
 
+    subscription = ditto.sync.registerSubscription(query = "SELECT * FROM $collection")
+
+    liveQuery = query.observeLocal { docs, event ->
+        Log.d("docValue321", docs.size.toString())
+
+        when (event) {
+
+            is DittoLiveQueryEvent.Initial -> {}
+
+            is DittoLiveQueryEvent.Update -> {
+
+                event.updates.forEach { index ->
+                    val doc = docs[index]
+                    val docStation = doc["_id"].value
+                    Log.d("docStation", doc.toString())
+                }
+            }
+        }
+        docValues.clear()
+        for (i in docs) {
+            Log.d("docValue32132423", i.value.toString())
+            docValues.add(i.value.toString())
+        }
+    }
+}
