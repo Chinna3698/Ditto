@@ -59,7 +59,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("live.ditto:ditto:4.5.1")
+    implementation(libs.live.ditto.ditto)
+    implementation(libs.ditto.tools.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

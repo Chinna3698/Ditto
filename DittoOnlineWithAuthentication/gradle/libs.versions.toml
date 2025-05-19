@@ -1,6 +1,8 @@
 [versions]
 agp = "8.3.1"
+ditto = "4.10.2"
 kotlin = "1.9.0"
+dittoToolsAndroid = "4.0.0"
 coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -11,6 +13,8 @@ composeBom = "2023.08.00"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+live-ditto-ditto = { group = "live.ditto", name = "ditto", version.ref = "ditto" }
+ditto-tools-android = { module = "live.ditto:ditto-tools-android", version.ref = "dittoToolsAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

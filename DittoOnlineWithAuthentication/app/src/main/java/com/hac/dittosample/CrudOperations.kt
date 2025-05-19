@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,17 +19,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import live.ditto.Ditto
 import live.ditto.DittoAuthenticationCallback
 import live.ditto.DittoAuthenticator
 import live.ditto.DittoError
 import live.ditto.DittoLiveQuery
 import live.ditto.DittoLoginCallback
+import live.ditto.DittoPresenceGraph
+import live.ditto.tools.toolsviewer.DittoToolsViewer
 
 
 var docValues by mutableStateOf(mutableStateListOf<String>())
 var liveQuery: DittoLiveQuery? = null
-const val collection = "RealDeviceDb3"
+const val collection = "RealDeviceDb4"
 fun performAction(
     action: String,
     value: String,
@@ -86,7 +92,6 @@ fun CrudOperations(ditto: Ditto) {
     var update by remember { mutableStateOf("") }
     var updateValue by remember { mutableStateOf("") }
     var delete by remember { mutableStateOf("") }
-
     Row {
         Column(
             modifier = Modifier
@@ -142,12 +147,19 @@ fun CrudOperations(ditto: Ditto) {
 
         }
         Text(text = "Total documents Size is: ${docValues.size} ")
-        Column {
-            for (i in docValues) {
-                Text(text = i)
-            }
+        Row{
+            Column {
+                for (i in docValues) {
+                    Text(text = i)
+                }
 
+            }
+            DittoToolsViewer(
+                ditto = ditto,
+                onExitTools = {  }
+            )
         }
+
     }
 
 }

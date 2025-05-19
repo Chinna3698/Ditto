@@ -13,6 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import com.hac.dittosample.ui.theme.DittoSampleTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import live.ditto.Ditto
 import live.ditto.DittoError
 import live.ditto.DittoIdentity
@@ -37,25 +40,41 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val serverUrl = "wss://d68742e1-380f-4d55-94cd-d2b344f3dc63.cloud.ditto.live"
+       // val serverUrl = "wss://d68742e1-380f-4d55-94cd-d2b344f3dc63.cloud.ditto.live"
         try {
+            val syncScopes = mapOf(
+                "local_mesh_orders" to "SmallPeersOnly"
+            )
             requestPermissions()
-            config.connect = DittoConnect(websocketUrls = mutableSetOf(serverUrl))
+            //config.connect = DittoConnect(websocketUrls = mutableSetOf(serverUrl))
             androidDependencies = DefaultAndroidDittoDependencies(this.applicationContext)
             val identity =
-                DittoIdentity.OnlineWithAuthentication(
+               /* DittoIdentity.OnlineWithAuthentication(
                     dependencies = androidDependencies,
                     appId = "d68742e1-380f-4d55-94cd-d2b344f3dc63",
                     callback = AuthCallBack()
+                )*/
+                DittoIdentity.OnlinePlayground(
+                    appId = "d68742e1-380f-4d55-94cd-d2b344f3dc63",
+                    token = "674b1e04-6d27-4209-9174-10434e41745d",
+                    dependencies = androidDependencies
                 )
             DittoLogger.minimumLogLevel = DittoLogLevel.DEBUG
             ditto = Ditto(androidDependencies, identity)
-            config.enableAllPeerToPeer()
+            CoroutineScope(Dispatchers.IO).launch {
+                ditto.store.execute(
+                    "ALTER SYSTEM SET USER_COLLECTION_SYNC_SCOPES = :syncScopes",
+                    mapOf("syncScopes" to syncScopes)
+                )
+
+            }
+            //config.enableAllPeerToPeer()
             config.peerToPeer.bluetoothLe.enabled = true
             config.peerToPeer.lan.enabled = true
             config.peerToPeer.wifiAware.enabled = true
-            ditto.transportConfig = config
-            ditto.disableSyncWithV3()
+            //ditto.transportConfig = config
+            //ditto.disableSyncWithV3()
+
             ditto.startSync()
             observeItems(ditto)
             ditto.store.observers
